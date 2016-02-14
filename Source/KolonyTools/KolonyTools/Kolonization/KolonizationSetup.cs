@@ -30,13 +30,13 @@ namespace Kolonization
             var finalSettings = new KolonizationConfig
             {
                 OrbitMultiplier = 0.1f,
-                EfficiencyMultiplier = 250000f,
+                EfficiencyMultiplier = 0f,
                 MinBaseBonus = 0.1f,
                 StartingBaseBonus = 1f,
 	            ScienceMultiplier =  0.000005f ,
 	            RepMultiplier =  0.00001f ,
 	            FundsMultiplier = 0.025f,
-                PointsPerStar = 200000000d
+                PointsPerStar = 0f
             };
 
             foreach (var node in kolonyNodes)

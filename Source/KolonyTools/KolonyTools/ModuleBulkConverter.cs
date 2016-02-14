@@ -9,6 +9,9 @@ namespace KolonyTools
         [KSPField] 
         public float Yield = 1f;
 
+        [KSPField] 
+        public float MinAbundance = 0f;
+
         private List<ResourceRatio> GetPlanetResourceList(List<string> inputs)
         {
             var prs = new List<ResourceRatio>();
@@ -23,7 +26,7 @@ namespace KolonyTools
                 if (abundanceList.Any())
                 {
                     var abundance = abundanceList.Average(ra => ra.Abundance);
-                    if (abundance > 0)
+                    if (abundance > MinAbundance)
                     {
                         print(String.Format("Adding {0} {1} ",abundance,res));
                         prs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = abundance * Yield, ResourceName = res, DumpExcess = true });

@@ -36,21 +36,21 @@ namespace PlanetaryLogistics
                 return;
 
             lastCheck = Planetarium.GetUniversalTime();
-
             foreach (var res in part.Resources.list)
             {
                 LevelvesselIds(res.resourceName);
             }
         }
 
+
         private void LevelvesselIds(string vesselId)
         {
             var res = part.Resources[vesselId];
             var body = vessel.mainBody.flightGlobalsIndex;
-            var fillPercent = res.amount/res.maxAmount;
+            var fillPercent = res.amount / res.maxAmount;
             if (fillPercent < LowerTrigger)
             {
-                var amtNeeded = (res.maxAmount*FillGoal) - res.amount;
+                var amtNeeded = (res.maxAmount * FillGoal) - res.amount;
                 if (!(amtNeeded > 0)) 
                     return;
                 

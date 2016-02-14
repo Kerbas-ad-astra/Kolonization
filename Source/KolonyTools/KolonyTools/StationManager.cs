@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
+using USITools;
 using File = KSP.IO.File;
 
 namespace KolonyTools
@@ -13,42 +14,61 @@ namespace KolonyTools
     public class StationManager : MonoBehaviour
     {
         private ApplicationLauncherButton stationButton;
+        private IButton stationTButton;
+        private bool windowVisible;
 
         private StationView _stationView;
 
         public StationManager()
         {
-            var texture = new Texture2D(36, 36, TextureFormat.RGBA32, false);
-            var textureFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "StationManager.png");
-            texture.LoadImage(System.IO.File.ReadAllBytes(textureFile));
-            this.stationButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
-                ApplicationLauncher.AppScenes.ALWAYS, texture);
+            if (ToolbarManager.ToolbarAvailable)
+            {
+                this.stationTButton = ToolbarManager.Instance.add("UKS", "stationManager");
+                stationTButton.TexturePath = "UmbraSpaceIndustries/Kolonization/StationManager24";
+                stationTButton.ToolTip = "USI Station Manager";
+                stationTButton.Enabled = true;
+                stationTButton.OnClick += (e) => { if(windowVisible) { GuiOff(); windowVisible = false; } else { GuiOn(); windowVisible = true; } };
+            }
+            else
+            {
+                var texture = new Texture2D(36, 36, TextureFormat.RGBA32, false);
+                var textureFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "StationManager.png");
+                texture.LoadImage(System.IO.File.ReadAllBytes(textureFile));
+                this.stationButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
+                    ApplicationLauncher.AppScenes.ALWAYS, texture);
+            }
         }
 
         private void GuiOn()
         {
-            _stationView = new StationView(FlightGlobals.ActiveVessel);
+            if(_stationView == null) _stationView = new StationView(FlightGlobals.ActiveVessel);
             _stationView.SetVisible(true);
         }
 
         private void GuiOff()
         {
-            _stationView = new StationView(FlightGlobals.ActiveVessel);
+            if(_stationView == null) _stationView = new StationView(FlightGlobals.ActiveVessel);
             _stationView.SetVisible(false);
         }
 
         private void ToggleGui()
         {
-            _stationView = new StationView(FlightGlobals.ActiveVessel);
+            if(_stationView == null) _stationView = new StationView(FlightGlobals.ActiveVessel);
             _stationView.ToggleVisible();
         }
 
         internal void OnDestroy()
         {
-            if (stationButton == null)
-                return;
-            ApplicationLauncher.Instance.RemoveModApplication(stationButton);
-            stationButton = null;
+            if (stationButton != null)
+            {
+                ApplicationLauncher.Instance.RemoveModApplication(stationButton);
+                stationButton = null;
+            }
+            if (stationTButton != null)
+            {
+                stationTButton.Destroy();
+                stationTButton = null;
+            }
         }
     }
 

@@ -449,7 +449,8 @@ namespace KolonyTools
             
             bonus = Math.Sqrt(bonus);
             bonus /= KolonizationSetup.Instance.Config.EfficiencyMultiplier;
-            return bonus;
+            bonus += KolonizationSetup.Instance.Config.StartingBaseBonus;
+            return Math.Max(KolonizationSetup.Instance.Config.MinBaseBonus,bonus);
         }
 
 
@@ -473,7 +474,7 @@ namespace KolonyTools
             var numScientists = GetVesselCrewByTrait("Scientist");
 
             var elapsedTime = Planetarium.GetUniversalTime() - k.LastUpdate;
-            var orbitMod = 1f;
+            var orbitMod = 1d;
             if(!vessel.LandedOrSplashed)
                 orbitMod = KolonizationSetup.Instance.Config.OrbitMultiplier;
 
@@ -510,7 +511,9 @@ namespace KolonyTools
                 var geoBonus = thisBodyInfo.Sum(b => b.GeologyResearch);
                 geoBonus = Math.Sqrt(habBonus);
                 geoBonus /= KolonizationSetup.Instance.Config.EfficiencyMultiplier;
-                d.EfficiencyBonus = (float)geoBonus;
+
+                geoBonus += KolonizationSetup.Instance.Config.StartingBaseBonus;
+                d.EfficiencyBonus = (float)Math.Max(KolonizationSetup.Instance.Config.MinBaseBonus, geoBonus);
             }
         }
 

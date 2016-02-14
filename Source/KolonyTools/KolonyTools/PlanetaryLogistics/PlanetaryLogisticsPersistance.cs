@@ -140,7 +140,6 @@ namespace PlanetaryLogistics
                 saveEntry = new PlanetaryLogisticsEntry();
                 saveEntry.ResourceName = logEntry.ResourceName;
                 saveEntry.BodyIndex = logEntry.BodyIndex;
-
                 _LogInfo.Add(saveEntry);
             }
             saveEntry.StoredQuantity = logEntry.StoredQuantity;

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using USITools;
 using Random = System.Random;
 
 namespace PlanetaryLogistics
@@ -23,6 +24,7 @@ namespace PlanetaryLogistics
     public class PlanetaryLogisticsMonitor : MonoBehaviour
     {
         private ApplicationLauncherButton planLogButton;
+        private IButton planLogTButton;
         private Rect _windowPosition = new Rect(300, 60, 620, 400);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
@@ -30,15 +32,27 @@ namespace PlanetaryLogistics
         private GUIStyle _scrollStyle;
         private Vector2 scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
+        private bool windowVisible;
 
         void Awake()
         {
-            var texture = new Texture2D(36, 36, TextureFormat.RGBA32, false);
-            var textureFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "PlanLog.png");
-            print("Loading " + textureFile);
-            texture.LoadImage(File.ReadAllBytes(textureFile));
-            this.planLogButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
-                ApplicationLauncher.AppScenes.ALWAYS, texture);
+            if (ToolbarManager.ToolbarAvailable)
+            {
+                this.planLogTButton = ToolbarManager.Instance.add("UKS", "planLog");
+                planLogTButton.TexturePath = "UmbraSpaceIndustries/Kolonization/PlanLog24";
+                planLogTButton.ToolTip = "USI Planetary Logistics";
+                planLogTButton.Enabled = true;
+                planLogTButton.OnClick += (e) => { if(windowVisible) { GuiOff(); windowVisible = false; } else { GuiOn(); windowVisible = true; } };
+            }
+            else
+            {
+                var texture = new Texture2D(36, 36, TextureFormat.RGBA32, false);
+                var textureFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "PlanLog.png");
+                print("Loading " + textureFile);
+                texture.LoadImage(File.ReadAllBytes(textureFile));
+                this.planLogButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
+                    ApplicationLauncher.AppScenes.ALWAYS, texture);
+            }
         }
 
         private void GuiOn()
@@ -115,10 +129,16 @@ namespace PlanetaryLogistics
 
         internal void OnDestroy()
         {
-            if (planLogButton == null)
-                return;
-            ApplicationLauncher.Instance.RemoveModApplication(planLogButton);
-            planLogButton = null;
+            if (planLogButton != null)
+            {
+                ApplicationLauncher.Instance.RemoveModApplication(planLogButton);
+                planLogButton = null;
+            }
+            if (planLogTButton != null)
+            {
+                planLogTButton.Destroy();
+                planLogTButton = null;
+            }
         }
 
         private void InitStyles()

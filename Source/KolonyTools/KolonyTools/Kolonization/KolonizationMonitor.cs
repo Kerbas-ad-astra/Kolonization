@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using KolonyTools;
 using UnityEngine;
+using USITools;
 using Random = System.Random;
 
 namespace Kolonization
@@ -28,6 +29,7 @@ namespace Kolonization
     public class KolonizationMonitor : MonoBehaviour
     {
         private ApplicationLauncherButton kolonyButton;
+        private IButton kolonyTButton;
         private Rect _windowPosition = new Rect(300, 60, 620, 400);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
@@ -35,15 +37,27 @@ namespace Kolonization
         private GUIStyle _scrollStyle;
         private Vector2 scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
+        private bool windowVisible;
 
         void Awake()
         {
-            var texture = new Texture2D(36, 36, TextureFormat.RGBA32, false);
-            var textureFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Kolony.png");
-            print("Loading " + textureFile);
-            texture.LoadImage(File.ReadAllBytes(textureFile));
-            this.kolonyButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
-                ApplicationLauncher.AppScenes.ALWAYS, texture);
+            if (ToolbarManager.ToolbarAvailable)
+            {
+                this.kolonyTButton = ToolbarManager.Instance.add("UKS", "kolony");
+                kolonyTButton.TexturePath = "UmbraSpaceIndustries/Kolonization/Kolony24";
+                kolonyTButton.ToolTip = "USI Kolony";
+                kolonyTButton.Enabled = true;
+                kolonyTButton.OnClick += (e) => { if(windowVisible) { GuiOff(); windowVisible = false; } else { GuiOn(); windowVisible = true; } };
+            }
+            else
+            {
+                var texture = new Texture2D(36, 36, TextureFormat.RGBA32, false);
+                var textureFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Kolony.png");
+                print("Loading " + textureFile);
+                texture.LoadImage(File.ReadAllBytes(textureFile));
+                this.kolonyButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
+                    ApplicationLauncher.AppScenes.ALWAYS, texture);
+            }
         }
 
         private void GuiOn()
@@ -101,17 +115,32 @@ namespace Kolonization
                     var geo = 0d;
                     var kol = 0d;
                     var bot = 0d;
+                                       
                     foreach(var k in KolonizationManager.Instance.KolonizationInfo.Where(x=>x.BodyIndex == p))
                     {
                         geo += k.GeologyResearch;
                         bot += k.BotanyResearch;
                         kol += k.KolonizationResearch;
                     }
+
+                    geo = Math.Sqrt(geo);
+                    geo /= KolonizationSetup.Instance.Config.EfficiencyMultiplier;
+                    geo += KolonizationSetup.Instance.Config.StartingBaseBonus;
+
+                    bot = Math.Sqrt(bot);
+                    bot /= KolonizationSetup.Instance.Config.EfficiencyMultiplier;
+                    bot += KolonizationSetup.Instance.Config.StartingBaseBonus;
+
+                    kol = Math.Sqrt(kol);
+                    kol /= KolonizationSetup.Instance.Config.EfficiencyMultiplier;
+                    kol += KolonizationSetup.Instance.Config.StartingBaseBonus;
+
+                    
                     GUILayout.BeginHorizontal();
                     GUILayout.Label(String.Format("<color=#FFFFFF>{0}</color>", body.bodyName), _labelStyle, GUILayout.Width(135));
-                    GUILayout.Label(String.Format("<color=#FFD900>{0:n2}</color>", geo / 1000d), _labelStyle, GUILayout.Width(80));
-                    GUILayout.Label(String.Format("<color=#FFD900>{0:n2}</color>", bot / 1000d), _labelStyle, GUILayout.Width(80));
-                    GUILayout.Label(String.Format("<color=#FFD900>{0:n2}</color>", kol / 1000d), _labelStyle, GUILayout.Width(80));
+                    GUILayout.Label(String.Format("<color=#FFD900>{0:n3}%</color>", geo * 100d), _labelStyle, GUILayout.Width(80));
+                    GUILayout.Label(String.Format("<color=#FFD900>{0:n3}%</color>", bot * 100d), _labelStyle, GUILayout.Width(80));
+                    GUILayout.Label(String.Format("<color=#FFD900>{0:n3}%</color>", kol * 100d), _labelStyle, GUILayout.Width(80));
                     GUILayout.EndHorizontal();
                 }
             }
@@ -130,10 +159,16 @@ namespace Kolonization
 
         internal void OnDestroy()
         {
-            if (kolonyButton == null)
-                return;
-            ApplicationLauncher.Instance.RemoveModApplication(kolonyButton);
-            kolonyButton = null;
+            if (kolonyButton != null)
+            {
+                ApplicationLauncher.Instance.RemoveModApplication(kolonyButton);
+                kolonyButton = null;
+            }
+            else
+            {
+                kolonyTButton.Destroy();
+                kolonyTButton = null;
+            }
         }
 
         private void InitStyles()

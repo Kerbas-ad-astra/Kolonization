@@ -81,13 +81,15 @@ namespace PlanetaryLogistics
                 && n.BodyIndex == logEntry.BodyIndex);
             if (newEntry == null)
             {
-                newEntry = new PlanetaryLogisticsEntry();
-                newEntry.ResourceName = logEntry.ResourceName;
-                newEntry.BodyIndex = logEntry.BodyIndex;
+                newEntry = new PlanetaryLogisticsEntry
+                {
+                    ResourceName = logEntry.ResourceName,
+                    BodyIndex = logEntry.BodyIndex
+                };
                 PlanetaryLogisticsInfo.Add(newEntry);
             }
             newEntry.StoredQuantity = logEntry.StoredQuantity;
-            PlanetaryLogisticsScenario.Instance.settings.SaveLogEntryNode(logEntry);
+            PlanetaryLogisticsScenario.Instance.settings.SaveLogEntryNode(newEntry);
         }
     }
 }
