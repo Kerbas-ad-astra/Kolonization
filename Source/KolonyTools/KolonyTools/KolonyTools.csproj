@@ -35,6 +35,10 @@
       <HintPath>..\..\..\..\..\KSP_DEV\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="KSPUtil">
+      <HintPath>..\..\..\..\..\KSP_DEV\KSP_Data\Managed\KSPUtil.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -43,6 +47,10 @@
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\KSP_DEV\KSP_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\..\..\..\KSP_DEV\KSP_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="USITools">
@@ -54,6 +62,7 @@
     <Compile Include="AddScenarioModules.cs" />
     <Compile Include="Kolonization\KolonizationConfig.cs" />
     <Compile Include="Kolonization\KolonizationSetup.cs" />
+    <Compile Include="Kolonization_UI.cs" />
     <Compile Include="OrbitalLogistics\ComboBox.cs" />
     <Compile Include="OrbitalLogistics\MKSGui.cs" />
     <Compile Include="OrbitalLogistics\MKSLExtensions.cs" />
@@ -68,7 +77,9 @@
     <Compile Include="Kolonization\KolonizationPersistance.cs" />
     <Compile Include="Kolonization\KolonizationScenario.cs" />
     <Compile Include="MKSModule.cs" />
-    <Compile Include="OrbitalLogistics.cs" />
+    <Compile Include="OrbitalLogistics\MKSMainGui.cs" />
+    <Compile Include="OrbitalLogistics\MKSTransferCreateView.cs" />
+    <Compile Include="OrbitalLogistics\OrbitalLogistics.cs" />
     <Compile Include="PlanetaryLogistics\ModulePlanetaryLogistics.cs" />
     <Compile Include="PlanetaryLogistics\PlanetaryLogisticsEntry.cs" />
     <Compile Include="PlanetaryLogistics\PlanetaryLogisticsManager.cs" />
@@ -77,11 +88,13 @@
     <Compile Include="PlanetaryLogistics\PlanetaryLogisticsScenario.cs" />
     <Compile Include="SpaceAcademy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StationManager.cs" />
+    <Compile Include="StationManager\StationManager.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="OrbitalLogistics\Window.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
 Other similar extension points exist, see Microsoft.Common.targets.

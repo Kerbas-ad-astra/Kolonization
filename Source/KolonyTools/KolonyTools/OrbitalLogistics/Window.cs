@@ -26,6 +26,7 @@
  */
 
 using KSP.IO;
+using KSP.UI.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,7 +35,7 @@ using UnityEngine;
 
 namespace KolonyTools
 {
-    public abstract class Window<T>
+    public abstract class Window<T> 
     {
         private int windowId;
         private string configNodeName;
@@ -75,23 +76,9 @@ namespace KolonyTools
 
         public virtual void SetVisible(bool newValue)
         {
-            if (newValue)
-            {
-                if (!visible)
-                {
-                    RenderingManager.AddToPostDrawQueue(3, new Callback(DrawWindow));
-                }
-            }
-            else
-            {
-                if (visible)
-                {
-                    RenderingManager.RemoveFromPostDrawQueue(3, new Callback(DrawWindow));
-                }
-            }
-
             this.visible = newValue;
         }
+
 
         public void ToggleVisible()
         {
@@ -147,7 +134,7 @@ namespace KolonyTools
             return windowConfig;
         }
 
-        protected virtual void DrawWindow()
+        public virtual void DrawWindow()
         {
             if (visible)
             {
@@ -197,13 +184,13 @@ namespace KolonyTools
         {
             DrawWindowContents(windowId);
 
-            if (!HideCloseButton)
-            {
-                if (GUI.Button(new Rect(windowPos.width - 24, 4, 20, 20), "X", closeButtonStyle))
-                {
-                    SetVisible(false);
-                }
-            }
+            //if (!HideCloseButton)
+            //{
+            //    if (GUI.Button(new Rect(windowPos.width - 24, 4, 20, 20), "X", closeButtonStyle))
+            //    {
+            //        SetVisible(false);
+            //    }
+            //}
 
             if (Resizable)
             {
@@ -248,5 +235,6 @@ namespace KolonyTools
                 }
             }
         }
+
     }
 }

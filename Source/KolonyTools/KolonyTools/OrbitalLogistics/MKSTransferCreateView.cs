@@ -1,282 +1,10 @@
-﻿//Written by Flip van Toly for KSP community
-//released under CC 3.0 Share Alike license
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace KolonyTools
 {
-    public class MKSLcentral : PartModule
-    {
-        [KSPField(isPersistant = true, guiActive = true, guiName = ">>")]
-        public string status;
-
-        //GUI
-        private static GUIStyle windowStyle, labelStyle, redlabelStyle, textFieldStyle, buttonStyle;
-
-        public List<Vessel> bodyVesselList = new List<Vessel>();
-
-        //string with the resources for which the partmodule must function
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string ManagedResources = "";
-
-        //Delivery time variables
-        [KSPField(isPersistant = false, guiActive = false)]
-        public float PrepTime = 1; 
-        [KSPField(isPersistant = false, guiActive = false)]
-        public float TimePerDistance = 1; 
-        [KSPField(isPersistant = false, guiActive = false)]
-        public float TimeToFromLO = 1;
-
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string TimePerDistancePlanet = "";
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string TimeToFromLOPlanet = "";
-
-        //Delivery cost variables
-        [KSPField(isPersistant = false, guiActive = false)]
-        public float DistanceModifier = 1;
-        [KSPField(isPersistant = false, guiActive = false)]
-        public float SurfaceOrbitModifier = 1;
-        [KSPField(isPersistant = false, guiActive = false)]
-        public float OrbitSurfaceModifier = 1;
-        
-        [KSPField(isPersistant = false, guiActive = false)]
-        public float AtmosphereUpModifier = 1;
-        [KSPField(isPersistant = false, guiActive = false)]
-        public float AtmosphereDownModifier = 1;
-        
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string DistanceModifierPlanet = "";
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string SurfaceOrbitModifierPlanet = "";
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string OrbitSurfaceModifierPlanet = "";
-
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string Mix1CostName = "";
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string Mix1CostResources = "";
-
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string Mix2CostName = "";
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string Mix2CostResources = "";
-
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string Mix3CostName = "";
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string Mix3CostResources = "";
-
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string Mix4CostName = "";
-        [KSPField(isPersistant = false, guiActive = false)]
-        public string Mix4CostResources = "";
-
-        [KSPField(isPersistant = false, guiActive = false)]
-        public float maxTransferMass = 1000000f;
-
-        [KSPField(isPersistant = true, guiActive = false)]
-        public MKSLTranferList saveCurrentTransfersList = new MKSLTranferList();
-        [KSPField(isPersistant = true, guiActive = false)]
-        public MKSLTranferList savePreviousTransfersList = new MKSLTranferList();
-
-        public MKSMainGui MainGui;
-
-        /// <summary>
-        /// Main window
-        /// </summary>
-
-        private void initStyle()
-        {
-            windowStyle = new GUIStyle(HighLogic.Skin.window);
-            windowStyle.stretchWidth = false;
-            windowStyle.stretchHeight = false;
-
-            labelStyle = new GUIStyle(HighLogic.Skin.label);
-            labelStyle.stretchWidth = false;
-            labelStyle.stretchHeight = false;
-
-
-            redlabelStyle = new GUIStyle(HighLogic.Skin.label);
-            redlabelStyle.stretchWidth = false;
-            redlabelStyle.stretchHeight = false;
-            redlabelStyle.normal.textColor = Color.red;
-
-            textFieldStyle = new GUIStyle(HighLogic.Skin.textField);
-            textFieldStyle.stretchWidth = false;
-            textFieldStyle.stretchHeight = false;
-
-            buttonStyle = new GUIStyle(HighLogic.Skin.button);
-            buttonStyle.stretchHeight = false;
-            buttonStyle.stretchWidth = false;
-        }
-
-
-        [KSPEvent(name = "Kolony Logistics", isDefault = false, guiActive = true, guiName = "Kolony Logistics")]
-        public void openGUIMain()
-        {
-            initStyle();
-            if (MainGui == null)
-            {
-                MainGui = new MKSMainGui(this);
-            }
-            MainGui.SetVisible(true);
-        }
-
-
-        /// <summary>
-        /// vessel list
-        /// </summary>
-        //make a list of all valid tranfer vessels on this celestial body.
-        public void makeBodyVesselList()
-        {
-            bodyVesselList.Clear();
-            foreach (Vessel ves in FlightGlobals.Vessels)
-            {
-                if (vessel.mainBody.name == ves.mainBody.name && ves.vesselType != VesselType.Debris && ves.vesselType != VesselType.SpaceObject && ves.vesselType != VesselType.Unknown
-                    && vessel.vesselType != VesselType.Flag
-                    && (ves.situation == Vessel.Situations.ORBITING || ves.situation == Vessel.Situations.SPLASHED || ves.situation == Vessel.Situations.LANDED || ves.situation == Vessel.Situations.PRELAUNCH))
-                {
-                    bodyVesselList.Add(ves);
-                }
-            }
-        }
-
-        //removes an entry from the current transfers 
-        public void removeCurrentTranfer(MKSLtransfer transRemove)
-        {
-
-            saveCurrentTransfersList.Remove(transRemove);
-            savePreviousTransfersList.Add(transRemove);
-        }
-
-        // adapted from: www.consultsarath.com/contents/articles/KB000012-distance-between-two-points-on-globe--calculation-using-cSharp.aspx
-        public double GetDistanceBetweenPoints(double lat1, double long1, double lat2, double long2)
-        {
-            double distance = 0;
-
-            double dLat = (lat2 - lat1) / 180 * Math.PI;
-            double dLong = (long2 - long1) / 180 * Math.PI;
-
-            double a = Math.Max(0.0, Math.Min(1.0, Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
-                        + Math.Cos(lat2 / 180 * Math.PI) * Math.Sin(dLong / 2) * Math.Sin(dLong / 2)));
-            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-
-            //Calculate radius of planet
-            // For this you can assume any of the two points.
-            double radiusE = FlightGlobals.ActiveVessel.mainBody.Radius; // Equatorial radius, in metres
-            double radiusP = FlightGlobals.ActiveVessel.mainBody.Radius; // Polar Radius
-
-            //Numerator part of function
-            double nr = Math.Pow(radiusE * radiusP * Math.Cos(lat1 / 180 * Math.PI), 2);
-            //Denominator part of the function
-            double dr = Math.Pow(radiusE * Math.Cos(lat1 / 180 * Math.PI), 2)
-                            + Math.Pow(radiusP * Math.Sin(lat1 / 180 * Math.PI), 2);
-            double radius = Math.Sqrt(nr / dr);
-
-            //Calaculate distance in metres.
-            distance = radius * c;
-            return distance;
-        }
-
-    }
-
-    public class MKSMainGui : Window<MKSMainGui>,ITransferListViewer
-    {
-        private readonly MKSLcentral _model;
-        private Vector2 scrollPositionGUICurrentTransfers;
-        private Vector2 scrollPositionGUIPreviousTransfers;
-        private MKSLGuiTransfer editGUITransfer;
-        private MKSTransferView _transferView;
-        private MKSTransferCreateView _transferCreateView;
-
-        public MKSMainGui(MKSLcentral model)
-            : base("Kolony Logistics", 200, 500)
-        {
-            _model = model;
-            SetVisible(true);
-        }
-
-        protected override void DrawWindowContents(int windowId)
-        {
-            GUILayout.BeginVertical();
-
-            if (GUILayout.Button("New Transfer", MKSGui.buttonStyle, GUILayout.Width(150)))
-            {
-                _model.makeBodyVesselList();
-                editGUITransfer = new MKSLGuiTransfer();
-                System.Random rnd = new System.Random();
-                editGUITransfer.transferName = rnd.Next(100000, 999999).ToString();
-                editGUITransfer.initTransferList(_model.ManagedResources);
-                editGUITransfer.initCostList(_model.Mix1CostResources);
-                editGUITransfer.VesselFrom = _model.vessel;
-                editGUITransfer.VesselTo = _model.vessel;
-                editGUITransfer.calcResources();
-
-                _transferCreateView = new MKSTransferCreateView(editGUITransfer, _model);
-            }
-
-            GUILayout.Label("Current transfers", MKSGui.labelStyle, GUILayout.Width(150));
-            scrollPositionGUICurrentTransfers = GUILayout.BeginScrollView(scrollPositionGUICurrentTransfers, false, true, GUILayout.MinWidth(160), GUILayout.MaxHeight(180));
-            foreach (MKSLtransfer trans in _model.saveCurrentTransfersList)
-            {
-                if (GUILayout.Button(trans.transferName + " (" + Utilities.DeliveryTimeString(trans.arrivaltime, Planetarium.GetUniversalTime()) + ")", MKSGui.buttonStyle, GUILayout.Width(135), GUILayout.Height(22)))
-                {
-                    if (_transferView == null)
-                    {
-                        _transferView = new MKSTransferView(trans,this);
-                    }
-                    else
-                    {
-                        _transferView.Transfer = trans;
-                    }
-                }
-            }
-            GUILayout.EndScrollView();
-
-            GUILayout.Label("Previous tranfers", MKSGui.labelStyle, GUILayout.Width(150));
-            scrollPositionGUIPreviousTransfers = GUILayout.BeginScrollView(scrollPositionGUIPreviousTransfers, false, true, GUILayout.MinWidth(160), GUILayout.MaxHeight(120));
-            foreach (MKSLtransfer trans in _model.savePreviousTransfersList)
-            {
-                if (GUILayout.Button(trans.transferName + " " + (trans.delivered ? "succes" : "failure"), MKSGui.buttonStyle, GUILayout.Width(135), GUILayout.Height(22)))
-                {
-                    if (_transferView == null)
-                    {
-                        _transferView = new MKSTransferView(trans,this);
-                    }
-                    else
-                    {
-                        _transferView.Transfer = trans;
-                    }
-                }
-            }
-            GUILayout.EndScrollView();
-
-            GUILayout.Label("", MKSGui.labelStyle, GUILayout.Width(150));
-            if (GUILayout.Button("Close", MKSGui.buttonStyle, GUILayout.Width(150)))
-            {
-                SetVisible(false);
-            }
-            GUILayout.EndVertical();
-        }
-
-        public void Remove(MKSLtransfer transfer)
-        {
-            _model.removeCurrentTranfer(transfer);
-        }
-    }
-
-    internal enum TransferCostPaymentModes
-    {
-        Source,
-        Target,
-        Both
-    }
-
     public class MKSTransferCreateView : Window<MKSTransferCreateView>
     {
         private struct TransferValidationResult
@@ -311,7 +39,7 @@ namespace KolonyTools
         private Dictionary<TransferCostPaymentModes, bool> _costPayModes;
 
         private ComboBox fromVesselComboBox;
-        
+
         private ComboBox toVesselComboBox;
 
         private void Start()
@@ -327,17 +55,17 @@ namespace KolonyTools
             //comboBoxList[4] = new GUIContent("Thing 5");
             listStyle.normal.textColor = Color.white;
             listStyle.onHover.background =
-            listStyle.hover.background = new Texture2D(2, 2);
+                listStyle.hover.background = new Texture2D(2, 2);
             listStyle.padding.left =
-            listStyle.padding.right =
-            listStyle.padding.top =
-            listStyle.padding.bottom = 4;
+                listStyle.padding.right =
+                    listStyle.padding.top =
+                        listStyle.padding.bottom = 4;
             this._costPayModes = new Dictionary<TransferCostPaymentModes, bool>
-                                 {
-                                     {TransferCostPaymentModes.Source, false},
-                                     {TransferCostPaymentModes.Target, false},
-                                     {TransferCostPaymentModes.Both, true}
-                                 };
+            {
+                {TransferCostPaymentModes.Source, false},
+                {TransferCostPaymentModes.Target, false},
+                {TransferCostPaymentModes.Both, true}
+            };
 
             fromVesselComboBox = new ComboBox(new Rect(20, 30, 100, 20), fromList[0], fromList, "button", "box", listStyle,
                 i =>
@@ -347,7 +75,7 @@ namespace KolonyTools
                     _model.calcResources();
                 });
             fromVesselComboBox.SelectedItemIndex = _central.bodyVesselList.IndexOf(_model.VesselFrom);
-            toVesselComboBox = new ComboBox(new Rect(20, 30, 100, 20), toList[0], toList, "button", "box", listStyle, 
+            toVesselComboBox = new ComboBox(new Rect(20, 30, 100, 20), toList[0], toList, "button", "box", listStyle,
                 i =>
                 {
                     vesselTo = i;
@@ -421,7 +149,7 @@ namespace KolonyTools
             {
                 GUILayout.BeginHorizontal();
                 if (GUIButton.LayoutButton(new GUIContent(res.resourceName + ": " + Math.Round(res.amount, 2) + " of " +
-                    Math.Round(_model.resourceAmount.Find(x => x.resourceName == res.resourceName).amount)) ))
+                                                          Math.Round(_model.resourceAmount.Find(x => x.resourceName == res.resourceName).amount))))
                 {
                     editGUIResource = res;
                     StrAmount = Math.Round(res.amount, 2).ToString();
@@ -446,17 +174,17 @@ namespace KolonyTools
                 GUILayout.Label("Amount:", MKSGui.labelStyle, GUILayout.Width(80));
                 StrAmount = GUILayout.TextField(StrAmount, 10, MKSGui.textFieldStyle, GUILayout.Width(60));
                 Action<double> setAmount = (a) =>
-                                              {
-                                                  if (a < currentAvailable)
-                                                  {
-                                                      editGUIResource.amount = a;
-                                                  }
-                                                  else
-                                                  {
-                                                      editGUIResource.amount = currentAvailable;
-                                                      StrAmount = editGUIResource.amount.ToString("F2");
-                                                  }
-                                              };
+                {
+                    if (a < currentAvailable)
+                    {
+                        editGUIResource.amount = a;
+                    }
+                    else
+                    {
+                        editGUIResource.amount = currentAvailable;
+                        StrAmount = editGUIResource.amount.ToString("F2");
+                    }
+                };
                 if (GUILayout.Button("Set", MKSGui.buttonStyle, GUILayout.Width(30)))
                 {
                     double number;
@@ -470,7 +198,7 @@ namespace KolonyTools
                         editGUIResource.amount = 0;
                     }
                     updateCostList(_model);
-                    validateTransfer(_model,getSelectedMode(), ref StrValidationMessage);
+                    validateTransfer(_model, getSelectedMode(), ref StrValidationMessage);
                 }
                 GUILayout.EndHorizontal();
 
@@ -505,8 +233,8 @@ namespace KolonyTools
             GUILayout.EndHorizontal();
             GUILayout.BeginVertical();
             GUILayout.Label("Tranfer Mass: " + Math.Round(_model.totalMass(), 2) + " (maximum: " + _central.maxTransferMass + ")", MKSGui.labelStyle, GUILayout.Width(300));
-            
-            
+
+
             GUILayout.BeginHorizontal();
             GUILayout.Label("");
             if (_central.Mix1CostName != "")
@@ -601,7 +329,7 @@ namespace KolonyTools
                 var selMode = getSelectedMode();
                 if (validateTransfer(_model, selMode, ref StrValidationMessage))
                 {
-                    createTransfer(_model,selMode);
+                    createTransfer(_model, selMode);
                 }
             }
             if (GUILayout.Button("Cancel", MKSGui.buttonStyle, GUILayout.Width(100)))
@@ -616,12 +344,12 @@ namespace KolonyTools
 
         private TransferValidationResult _checkTransferAmounts(MKSLtransfer trans, TransferCostPaymentModes paymentMode)
         {
-            var res = new[] {true, true};
+            var res = new[] { true, true };
             var validationMess = "";
             var totals = new Dictionary<string, double>();
             foreach (var tRes in trans.transferList)
             {
-                totals.Add(tRes.resourceName,tRes.amount);
+                totals.Add(tRes.resourceName, tRes.amount);
                 if (this.readResource(trans.VesselFrom, tRes.resourceName)[0] < tRes.amount)
                 {
                     res[0] = res[1] = false;
@@ -632,33 +360,33 @@ namespace KolonyTools
             if (res[1])
             {
                 Func<string, double, double> subtractTransfer = (n, a) =>
-                                                                {
-                                                                    if (totals.ContainsKey(n))
-                                                                    {
-                                                                        return a - totals[n];
-                                                                    }
-                                                                    return a;
-                                                                };
+                {
+                    if (totals.ContainsKey(n))
+                    {
+                        return a - totals[n];
+                    }
+                    return a;
+                };
                 foreach (var cRes in trans.costList)
                 {
                     var totalAvail = 0d;
                     switch (paymentMode)
                     {
                         case TransferCostPaymentModes.Source:
-                        {
-                            totalAvail = subtractTransfer(cRes.resourceName, this.readResource(trans.VesselFrom, cRes.resourceName)[0]);
-                        }
+                            {
+                                totalAvail = subtractTransfer(cRes.resourceName, this.readResource(trans.VesselFrom, cRes.resourceName)[0]);
+                            }
                             break;
                         case TransferCostPaymentModes.Target:
-                        {
-                            totalAvail = this.readResource(trans.VesselTo, cRes.resourceName)[0];
-                        }
+                            {
+                                totalAvail = this.readResource(trans.VesselTo, cRes.resourceName)[0];
+                            }
                             break;
                         case TransferCostPaymentModes.Both:
-                        {
-                            totalAvail = this.readResource(trans.VesselTo, cRes.resourceName)[0] + subtractTransfer(cRes.resourceName, this.readResource(trans.VesselFrom, cRes.resourceName)[0]);
+                            {
+                                totalAvail = this.readResource(trans.VesselTo, cRes.resourceName)[0] + subtractTransfer(cRes.resourceName, this.readResource(trans.VesselFrom, cRes.resourceName)[0]);
 
-                        }break;
+                            } break;
                     }
                     if (!(totalAvail < cRes.amount))
                     {
@@ -669,7 +397,7 @@ namespace KolonyTools
                     break;
                 }
             }
-            return new TransferValidationResult(res[0],res[1],validationMess);
+            return new TransferValidationResult(res[0], res[1], validationMess);
         }
 
         public void updateCostList(MKSLtransfer trans)
@@ -811,22 +539,22 @@ namespace KolonyTools
                         break;
                     case TransferCostPaymentModes.Both:
                     default:
-                    {
-                        Vessel first;
-                        Vessel second;
-                        if (this._central.vessel.id == trans.VesselFrom.id)
                         {
-                            first = trans.VesselFrom;
-                            second = trans.VesselTo;
+                            Vessel first;
+                            Vessel second;
+                            if (this._central.vessel.id == trans.VesselFrom.id)
+                            {
+                                first = trans.VesselFrom;
+                                second = trans.VesselTo;
+                            }
+                            else
+                            {
+                                first = trans.VesselTo;
+                                second = trans.VesselFrom;
+                            }
+                            var drawn = first.ExchangeResources(costRes.resourceName, toDraw);
+                            second.ExchangeResources(costRes.resourceName, toDraw - drawn);
                         }
-                        else
-                        {
-                            first = trans.VesselTo;
-                            second = trans.VesselFrom;
-                        }
-                        var drawn = first.ExchangeResources(costRes.resourceName, toDraw);
-                        second.ExchangeResources(costRes.resourceName, toDraw - drawn);
-                    }
                         break;
                 }
             }
@@ -890,7 +618,7 @@ namespace KolonyTools
                     }
                 }
             }
-            return new [] {amountCounted,maxAmountCounted};
+            return new[] { amountCounted, maxAmountCounted };
         }
         private double getValueFromStrPlanet(string StrPlanet, string PlanetName)
         {
@@ -924,12 +652,12 @@ namespace KolonyTools
                 trans.arrivaltime = Planetarium.GetUniversalTime() + prepT + (distance * TpD);
             }
             else if ((trans.VesselFrom.protoVessel.situation == Vessel.Situations.LANDED || trans.VesselFrom.protoVessel.situation == Vessel.Situations.SPLASHED || trans.VesselFrom.protoVessel.situation == Vessel.Situations.PRELAUNCH) &&
-                        (trans.VesselTo.protoVessel.situation == Vessel.Situations.ORBITING))
+                     (trans.VesselTo.protoVessel.situation == Vessel.Situations.ORBITING))
             {
                 trans.arrivaltime = Planetarium.GetUniversalTime() + prepT + TtfLO;
             }
             else if ((trans.VesselFrom.protoVessel.situation == Vessel.Situations.ORBITING) &&
-                        (trans.VesselTo.protoVessel.situation == Vessel.Situations.LANDED || trans.VesselTo.protoVessel.situation == Vessel.Situations.SPLASHED || trans.VesselTo.protoVessel.situation == Vessel.Situations.PRELAUNCH))
+                     (trans.VesselTo.protoVessel.situation == Vessel.Situations.LANDED || trans.VesselTo.protoVessel.situation == Vessel.Situations.SPLASHED || trans.VesselTo.protoVessel.situation == Vessel.Situations.PRELAUNCH))
             {
                 trans.arrivaltime = Planetarium.GetUniversalTime() + prepT + TtfLO;
             }
@@ -969,8 +697,3 @@ namespace KolonyTools
         }
     }
 }
-
-
-
-
-

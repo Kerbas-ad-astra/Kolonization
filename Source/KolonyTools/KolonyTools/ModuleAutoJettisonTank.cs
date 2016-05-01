@@ -5,9 +5,6 @@ namespace KolonyTools
     public class ModuleAutoJettisonTank : PartModule
     {
         [KSPField] 
-        public float JettisonAltitude = 5000f;
-
-        [KSPField] 
         public string ResourceName = "Dirt";
 
         public void FixedUpdate()
@@ -15,7 +12,7 @@ namespace KolonyTools
             if (!HighLogic.LoadedSceneIsFlight)
                 return;
 
-            if (vessel.altitude > JettisonAltitude)
+            if (vessel.orbit.PeA > ResourceUtilities.FLOAT_TOLERANCE)
             {
                 var res = part.Resources.list.FirstOrDefault(pr => pr.resourceName == ResourceName);
                 if(res != null)

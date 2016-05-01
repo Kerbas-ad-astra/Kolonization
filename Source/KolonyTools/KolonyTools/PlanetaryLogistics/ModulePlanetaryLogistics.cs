@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using KolonyTools;
 using USITools.Logistics;
 
 namespace PlanetaryLogistics
@@ -23,22 +24,33 @@ namespace PlanetaryLogistics
         public double vesselIdTax = 0.05d;
 
         private double lastCheck;
+        private USI_ModuleResourceWarehouse _wh;
 
         public void FixedUpdate()
         {
-            if (!HighLogic.LoadedSceneIsFlight)
-                return;
-
-            if (!vessel.LandedOrSplashed)
-                return;
-
-            if (Math.Abs(Planetarium.GetUniversalTime() - lastCheck) < CheckFrequency)
-                return;
-
-            lastCheck = Planetarium.GetUniversalTime();
-            foreach (var res in part.Resources.list)
+            try
             {
-                LevelvesselIds(res.resourceName);
+                if (!HighLogic.LoadedSceneIsFlight)
+                    return;
+
+                if (!vessel.LandedOrSplashed)
+                    return;
+
+                if (_wh == null)
+                    _wh = part.FindModuleImplementing<USI_ModuleResourceWarehouse>();
+
+
+                if (!_wh.transferEnabled)
+                    return;
+
+                foreach (var res in part.Resources.list)
+                {
+                    LevelvesselIds(res.resourceName);
+                }
+            }
+            catch (Exception ex)
+            {
+                print("ERROR IN ModulePlanetaryLogistics -> FixedUpdate");
             }
         }
 
@@ -53,7 +65,7 @@ namespace PlanetaryLogistics
                 var amtNeeded = (res.maxAmount * FillGoal) - res.amount;
                 if (!(amtNeeded > 0)) 
                     return;
-                
+
                 if (!PlanetaryLogisticsManager.Instance.DoesLogEntryExist(vesselId, body)) 
                     return;
                 

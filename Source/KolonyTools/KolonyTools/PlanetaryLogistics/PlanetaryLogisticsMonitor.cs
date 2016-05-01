@@ -1,4 +1,5 @@
-﻿using System;
+﻿using KSP.UI.Screens;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -33,6 +34,7 @@ namespace PlanetaryLogistics
         private Vector2 scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
         private bool windowVisible;
+        public static bool renderDisplay = false;
 
         void Awake()
         {
@@ -57,7 +59,7 @@ namespace PlanetaryLogistics
 
         private void GuiOn()
         {
-            RenderingManager.AddToPostDrawQueue(146, Ondraw);
+            renderDisplay = true;
         }
 
         public void Start()
@@ -68,9 +70,27 @@ namespace PlanetaryLogistics
 
         private void GuiOff()
         {
-            RenderingManager.RemoveFromPostDrawQueue(146, Ondraw);
+            renderDisplay = false;
         }
 
+        private void OnGUI()
+        {
+            try
+            {
+                if (!renderDisplay)
+                    return;
+
+                if (Event.current.type == EventType.Repaint || Event.current.isMouse)
+                {
+                    //preDrawQueue
+                }
+                Ondraw();
+            }
+            catch (Exception ex)
+            {
+                print("ERROR in PlanetaryLogisticsMonitor (OnGui) " + ex.Message);
+            }
+        }
 
         private void Ondraw()
         {

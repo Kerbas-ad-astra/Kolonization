@@ -1,4 +1,5 @@
-﻿using System;
+﻿using KSP.UI.Screens;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,10 +17,11 @@ namespace KolonyTools
         private ApplicationLauncherButton stationButton;
         private IButton stationTButton;
         private bool windowVisible;
+        //public static bool renderDisplay = false;
 
         private StationView _stationView;
 
-        public StationManager()
+        void Awake()
         {
             if (ToolbarManager.ToolbarAvailable)
             {
@@ -49,6 +51,28 @@ namespace KolonyTools
         {
             if(_stationView == null) _stationView = new StationView(FlightGlobals.ActiveVessel);
             _stationView.SetVisible(false);
+        }
+
+        private void OnGUI()
+        {
+            try
+            {
+                if (_stationView == null)
+                    return;
+
+                if (!_stationView.IsVisible())
+                    return;
+
+                if (Event.current.type == EventType.Repaint || Event.current.isMouse)
+                {
+                    //preDrawQueue
+                }
+                _stationView.DrawWindow();
+            }
+            catch (Exception ex)
+            {
+                print("ERROR in StationManager (OnGui) " + ex.Message);
+            }
         }
 
         private void ToggleGui()
