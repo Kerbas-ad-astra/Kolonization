@@ -271,7 +271,7 @@ namespace KolonyTools
             try
             {
                 var numMods = 0;
-                var pList = v.parts.Where(p => p.Modules.Contains("ModuleResourceConverter"));
+                var pList = v.parts.Where(p => p.Modules.Contains("ModuleResourceConverter") || p.Modules.Contains("ModuleBulkConverter"));
                 foreach (var p in pList)
                 {
                     var mods = p.Modules.OfType<ModuleResourceConverter>();
@@ -433,6 +433,10 @@ namespace KolonyTools
             conEff *= (float)kBonus;
             
             foreach (var con in part.FindModulesImplementing<ModuleResourceConverter>())
+            {
+                con.EfficiencyBonus = conEff;
+            }
+            foreach (var con in part.FindModulesImplementing<ModuleBulkConverter>())
             {
                 con.EfficiencyBonus = conEff;
             }
